@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>☕ 별빛 카페 매출 대시보드</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --primary: #6366f1;
+      --text: #1e1e2e;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 {
+      font-size: 2rem;
+      color: var(--primary);
+    }
+    header p {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 0.95rem;
+    }
+
+    /* 요약 카드 */
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .card .label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .card .value {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* 차트 영역 */
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 800px) {
+      .chart-row { grid-template-columns: 1fr; }
+    }
+    .chart-box {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .chart-box h2 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+    .chart-container {
+      position: relative;
+      height: 320px;
+    }
+
+    /* 요일별 표 */
+    .table-section {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .table-section h2 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px 16px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #f9fafb;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+    }
+    td.highlight {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 40px;
+      padding-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>☕ 별빛 카페 매출 대시보드</h1>
+    <p>2026.10.27 ~ 2026.11.25 (30일간)</p>
+  </header>
+
+  <!-- 요약 카드 -->
+  <section class="summary-cards">
+    <div class="card">
+      <div class="label">총 매출</div>
+      <div class="value" id="totalRevenue">-</div>
+    </div>
+    <div class="card">
+      <div class="label">일 평균 매출</div>
+      <div class="value" id="avgDailyRevenue">-</div>
+    </div>
+    <div class="card">
+      <div class="label">총 판매 잔수</div>
+      <div class="value" id="totalCups">-</div>
+    </div>
+    <div class="card">
+      <div class="label">베스트 메뉴</div>
+      <div class="value" id="bestMenu">-</div>
+    </div>
+  </section>
+
+  <!-- 차트 -->
+  <section class="chart-row">
+    <div class="chart-box">
+      <h2>📈 일별 매출 추이</h2>
+      <div class="chart-container">
+        <canvas id="dailyRevenueChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-box">
+      <h2>📊 메뉴별 총 판매량</h2>
+      <div class="chart-container">
+        <canvas id="menuBarChart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- 요일별 평균 매출 표 -->
+  <section class="table-section">
+    <h2>📅 요일별 평균 매출</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>요일</th>
+          <th>평균 매출</th>
+        </tr>
+      </thead>
+      <tbody id="dowTableBody"></tbody>
+    </table>
+  </section>
+
+  <footer>
+    ※ 이 대시보드는 가상의 데이터를 사용한 연습용입니다. 실제 카페나 회사와 무관합니다.
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="chart.js"></script>
+</body>
+</html>
